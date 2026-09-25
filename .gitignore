@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+# 日志与临时件
+*.log
+*.tmp
+*.bak
+# 编辑器与系统
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
