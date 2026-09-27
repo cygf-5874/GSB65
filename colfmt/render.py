@@ -1,6 +1,6 @@
 """表格渲染：把二维文本渲染成带边框的等宽表格。"""
 
-from .layout import ALIGNMENTS, pad_line, wrap_text
+from .layout import ALIGNMENTS, expand_tabs, pad_line, wrap_text
 from .width import display_width
 
 # 每种边框风格用到的字形：``h`` 横线、``v`` 竖线，三组分别是顶行 / 中间分隔行 /
@@ -12,6 +12,13 @@ STYLES = {
         "top": ("+", "+", "+"),
         "mid": ("+", "+", "+"),
         "bottom": ("+", "+", "+"),
+    },
+    "light": {
+        "h": "\u2500",
+        "v": "\u2502",
+        "top": ("\u250c", "\u252c", "\u2510"),
+        "mid": ("\u251c", "\u253c", "\u2524"),
+        "bottom": ("\u2514", "\u2534", "\u2518"),
     },
 }
 
@@ -33,6 +40,14 @@ def _resolve_widths(widths, columns):
     if len(widths) != columns:
         raise ValueError("widths 长度与列数不符：%d != %d" % (len(widths), columns))
     return widths
+
+
+def _process_cell(text):
+    """单元格原始文本 -> 参与宽度计算与折行的文本。
+
+    顺序固定：① ``|`` -> ``\\|``；② ``\\n`` -> ``<br>``；③ ``\\t`` 展开。
+    """
+    return expand_tabs(text.replace("|", "\\|").replace("\n", "<br>"))
 
 
 def _auto_widths(rows, headers, columns):
@@ -73,7 +88,7 @@ def render_table(rows, headers=None, widths=None, align="left", style="ascii"):
 
     语义见 README「对外契约」一节。``widths`` 为 ``None`` 时按内容取每列最大显示宽度。
     """
-    if style not in STYLES:
+    if style not in ("ascii", "light", "none"):
         raise ValueError("unknown style: %r" % (style,))
 
     if headers is not None:
@@ -85,8 +100,8 @@ def render_table(rows, headers=None, widths=None, align="left", style="ascii"):
     if columns == 0:
         return ""
 
-    grid = [list(row) for row in rows]
-    head = list(headers) if headers is not None else None
+    grid = [[_process_cell(cell) for cell in row] for row in rows]
+    head = [_process_cell(cell) for cell in headers] if headers is not None else None
     for row in grid:
         if len(row) != columns:
             raise ValueError("每行的列数必须一致")
