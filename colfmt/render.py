@@ -13,7 +13,39 @@ STYLES = {
         "mid": ("+", "+", "+"),
         "bottom": ("+", "+", "+"),
     },
+    "light": {
+        "h": "─",
+        "v": "│",
+        "top": ("┌", "┬", "┐"),
+        "mid": ("├", "┼", "┤"),
+        "bottom": ("└", "┴", "┘"),
+    },
+    "none": None,
 }
+
+
+def _expand_tabs(text):
+    """把 ``\\t`` 展开为空格：相对本单元格起点前进到下一个 8 的倍数。"""
+    parts = []
+    column = 0
+    for ch in text:
+        if ch == "\t":
+            count = 8 - column % 8
+            parts.append(" " * count)
+            column += count
+        else:
+            parts.append(ch)
+            column += display_width(ch)
+    return "".join(parts)
+
+
+def _prepare(cell):
+    """按契约 9 的固定顺序处理单元格：转义 ``|``、``\\n``，再展开 ``\\t``。"""
+    cell = cell.replace("|", "\\|")
+    cell = cell.replace("\n", "<br>")
+    if "\t" in cell:
+        cell = _expand_tabs(cell)
+    return cell
 
 
 def _resolve_align(align, columns):
@@ -85,8 +117,8 @@ def render_table(rows, headers=None, widths=None, align="left", style="ascii"):
     if columns == 0:
         return ""
 
-    grid = [list(row) for row in rows]
-    head = list(headers) if headers is not None else None
+    grid = [[_prepare(cell) for cell in row] for row in rows]
+    head = [_prepare(cell) for cell in headers] if headers is not None else None
     for row in grid:
         if len(row) != columns:
             raise ValueError("每行的列数必须一致")
